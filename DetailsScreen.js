@@ -15,7 +15,7 @@ const DANGER_INGREDIENTS = {
     'butylated hydroxyanisole (bha)': 'Preservative linked to cancer in lab animals.',
     'butylated hydroxytoluene (bht)': 'Preservative with potential hormone-disrupting effects.',
     'propylene glycol': 'Used in food and antifreeze; may irritate skin.',
-    'monosodium glutamate (msg)': 'Flavor enhancer that may cause headaches.',
+    'monosodium glutamate (msg)': 'Flavor enhancer that may cause headaches when consumed in large amounts.',
     'disodium inosinate': 'Flavor enhancer linked to gout.',
     'disodium guanylate': 'Often used with MSG; can cause allergic reactions.',
     'enriched flour': 'Processed flour with little nutritional value.',
@@ -41,18 +41,19 @@ const CAUTION_INGREDIENTS = {
     'guar gum': 'Thickening agent that can cause digestive issues.',
     'xanthan gum': 'Thickening agent that may cause bloating.',
     'caramel color': 'Food coloring with potential carcinogens.',
-    'hydrogenated oils': 'Source of trans fats, linked to heart disease.',
+    'hydrogenated oil': 'Source of trans fats, linked to heart disease.',
     'palm oil': 'Linked to deforestation and health issues.',
     'soy lecithin': 'May cause allergic reactions in sensitive individuals.',
     'sodium carboxymethyl cellulose': 'Thickener that may cause digestive issues.',
     'polysorbate 60': 'Emulsifier with limited safety testing.',
     'propylene glycol alginate': 'Thickener with potential to irritate skin.',
-    'refined vegetable oils': 'High in omega-6 fats, linked to inflammation.',
+    'refined vegetable oil': 'High in omega-6 fats, linked to inflammation.',
     'corn syrup': 'Sweetener linked to obesity.',
-    'artificial flavors': 'Synthetic chemicals with unknown long-term effects.',
+    'artificial flavor': 'Synthetic chemicals with unknown long-term effects.',
     'sodium phosphate': 'Used in processed foods; may affect kidneys.',
     'palm': 'Common in processed foods; linked to environmental harm.',
     'ferrous sulfate': 'Iron additive; excessive amounts may cause issues.',
+    'dextrose' : 'Can lead to a buildup of fat, which can result in obesity.'
 };
 
 function normalizeIngredient(item) {
@@ -73,6 +74,7 @@ export default function DetailsScreen({ route }) {
   const [error, setError] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState(null);
+  
 
   const API_URL = 'https://world.openfoodfacts.org/api/v2/product/';
 
@@ -223,13 +225,6 @@ export default function DetailsScreen({ route }) {
         <Text style={styles.nutritionValue}>{fat} g</Text>
       </View>
 
-      {packaging && (
-        <Text style={styles.infoText}>
-          <Text style={styles.infoLabel}>Packaging: </Text>
-          {packaging}
-        </Text>
-      )}
-
       <Text style={styles.chartTitle}>Nutritional Breakdown</Text>
       <BarChart
         data={barData}
@@ -248,14 +243,6 @@ export default function DetailsScreen({ route }) {
         fromZero
         style={styles.barChart}
         />
-
-
-      {brands && (
-        <Text style={styles.infoText}>
-          <Text style={styles.infoLabel}>Brand: </Text>
-          {brands}
-        </Text>
-      )}
 
       <Text style={styles.sectionTitle}>Ingredients</Text>
       <View style={styles.ingredientsContainer}>
@@ -301,17 +288,83 @@ export default function DetailsScreen({ route }) {
           </View>
         </View>
       </Modal>
+      <Text style={styles.sectionTitle}>More Info</Text>
 
-      {allergens_tags && allergens_tags.length > 0 && (
-        <>
-          <Text style={styles.sectionTitle}>Allergens</Text>
-          {allergens_tags.map((allergen, index) => (
-            <Text key={index} style={styles.allergenText}>
-              {allergen.replace('en:', '').replace(/_/g, ' ')}
-            </Text>
-          ))}
-        </>
+      {/* Eco-Score */}
+      {foodData.ecoscore_data && foodData.ecoscore_data.grade && (
+        <View style={[styles.nutritionRow, styles.ecoScoreRow]}>
+          <Text style={[styles.nutritionLabel, styles.ecoScoreLabel]}>Eco-Score:</Text>
+          <Text style={[styles.nutritionValue, styles.ecoScoreValue]} numberOfLines={1} ellipsizeMode="tail">
+            {foodData.ecoscore_data.grade.toUpperCase()}
+          </Text>
+        </View>
       )}
+
+      {/* Nutri-Score */}
+      {foodData.nutriscore_data && foodData.nutriscore_data.grade && (
+        <View style={[styles.nutritionRow, styles.nutriScoreRow]}>
+          <Text style={[styles.nutritionLabel, styles.nutriScoreLabel]}>Nutri-Score:</Text>
+          <Text style={[styles.nutritionValue, styles.nutriScoreValue]} numberOfLines={1} ellipsizeMode="tail">
+            {foodData.nutriscore_data.grade.toUpperCase()}
+          </Text>
+        </View>
+      )}
+
+      {/* Packaging */}
+      {packaging && (
+        <View style={[styles.nutritionRow, styles.packagingRow]}>
+          <Text style={[styles.nutritionLabel, styles.packagingLabel]}>Packaging:</Text>
+          <Text style={[styles.nutritionValue, styles.packagingValue]} numberOfLines={2} ellipsizeMode="tail">
+            {packaging}
+          </Text>
+        </View>
+      )}
+
+      {/* Labels */}
+      {foodData.categories_tags && foodData.categories_tags.length > 0 && (
+        <View style={[styles.nutritionRow, styles.labelsRow]}>
+          <Text style={[styles.nutritionLabel, styles.labelsLabel]}>Categories:</Text>
+          <Text style={[styles.nutritionValue, styles.labelsValue]} numberOfLines={2} ellipsizeMode="tail">
+            {foodData.categories_tags
+              .map((tag) => tag.replace('en:', '').replace(/_/g, ' '))
+              .join(', ')}
+          </Text>
+        </View>
+      )}
+
+      {/* Allergens */}
+      <View style={[styles.nutritionRow, styles.allergensRow]}>
+        <Text style={[styles.nutritionLabel, styles.allergensLabel]}>Allergens:</Text>
+        <View>
+          {allergens_tags && allergens_tags.length > 0 ? (
+            allergens_tags.map((allergen, index) => (
+              <Text key={index} style={[styles.nutritionValue, styles.allergenValue]} numberOfLines={1} ellipsizeMode="tail">
+                {allergen
+                  .replace('en:', '')
+                  .replace(/_/g, ' ')
+                  .split(' ')
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                  .join(' ')}
+              </Text>
+            ))
+          ) : (
+            <Text style={[styles.nutritionValue, styles.allergenValue]} numberOfLines={1} ellipsizeMode="tail">
+              None
+            </Text>
+          )}
+        </View>
+      </View>
+
+      {/* Brand */}
+      {brands && (
+        <View style={[styles.nutritionRow, styles.brandRow]} marginBottom="30">
+          <Text style={[styles.nutritionLabel, styles.brandLabel]}>Brand:</Text>
+          <Text style={[styles.nutritionValue, styles.brandValue]} numberOfLines={1} ellipsizeMode="tail">
+            {brands}
+          </Text>
+        </View>
+      )}
+
     </ScrollView>
   );
 }
@@ -371,6 +424,7 @@ const styles = StyleSheet.create({
   nutritionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center', // Ensures vertical alignment
     paddingVertical: 15,
     paddingHorizontal: 15,
     backgroundColor: '#ffffff',
@@ -382,14 +436,18 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   nutritionLabel: {
+    flex: 1, // Allow label to take up space
     fontSize: 16,
     fontWeight: '600',
     color: '#444',
   },
   nutritionValue: {
+    flex: 2, // Allow value to take up more space
     fontSize: 16,
     fontWeight: '600',
     color: '#22a7f0',
+    textAlign: 'right', // Align values to the right
+    flexWrap: 'wrap', // Ensure text wraps within the container
   },
   ingredientsContainer: {
     flexDirection: 'row',
@@ -400,7 +458,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   ingredientChip: {
-    backgroundColor: '#e0f7fa',
+    backgroundColor: '#acffa5',
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -469,5 +527,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#ff6347',
     marginVertical: 2,
+    marginBottom: 10,
   },
 });
